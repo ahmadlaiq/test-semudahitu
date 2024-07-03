@@ -5,7 +5,9 @@
 	let currentPage = 1;
 	let totalPages = 1;
 	let searchTerm = '';
-	let limit = 8; // Number of items per page
+	let limit = 8;
+	let showModal = false;
+	let editingItem = null;
 
 	async function fetchItems() {
 		const response = await fetch(
@@ -43,11 +45,10 @@
 		currentPage = newPage;
 		fetchItems();
 	}
-
+	// Handling delete item
 	async function deleteItem(id) {
 		if (confirm('Are you sure you want to delete this item?')) {
 			try {
-				
 				const response = await fetch(`/api/ins?id=${id}`, {
 					method: 'DELETE'
 				});
@@ -60,6 +61,37 @@
 				console.error('Error deleting item:', error);
 				alert('An error occurred while deleting the item.');
 			}
+		}
+	}
+
+	function openEditModal(item) {
+		editingItem = { ...item };
+		showModal = true;
+	}
+
+	function closeModal() {
+		showModal = false;
+		editingItem = null;
+	}
+
+	async function saveEdit() {
+		try {
+			const response = await fetch(`/api/ins?id=${editingItem._id}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(editingItem)
+			});
+			if (response.ok) {
+				fetchItems();
+				closeModal();
+			} else {
+				alert('Failed to update the item. Please try again.');
+			}
+		} catch (error) {
+			console.error('Error updating item:', error);
+			alert('An error occurred while updating the item.');
 		}
 	}
 </script>
@@ -102,6 +134,7 @@
 								<div class="flex justify-center gap-3 mt-4">
 									<button
 										class="px-3 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700"
+										on:click={() => openEditModal(item)}
 									>
 										Edit
 									</button>
@@ -137,6 +170,109 @@
 		</div>
 	</div>
 </div>
+
+{#if showModal}
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none focus:outline-none"
+	>
+		<div class="relative w-auto max-w-3xl mx-auto my-6 lg:w-3/4">
+			<div
+				class="relative flex flex-col w-full bg-white border-0 rounded-lg shadow-lg outline-none focus:outline-none"
+			>
+				<div
+					class="flex items-start justify-between p-5 border-b border-solid rounded-t border-blueGray-200"
+				>
+					<h3 class="text-3xl font-semibold">Edit Barang</h3>
+					<button
+						class="float-right p-1 ml-auto text-3xl font-semibold leading-none text-black bg-transparent border-0 outline-none opacity-5 focus:outline-none"
+						on:click={closeModal}>
+						<span
+							class="block w-6 h-6 text-2xl text-black bg-transparent outline-none opacity-5 focus:outline-none"
+						>
+							×
+						</span>
+					</button>
+				</div>
+				<div class="relative flex-auto p-6">
+					<form>
+						<div class="mb-4">
+							<label class="block mb-2 text-sm font-bold text-gray-700" for="no_surat_jalan">
+								No Surat Jalan
+							</label>
+							<input
+								class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
+								id="no_surat_jalan"
+								type="text"
+								bind:value={editingItem.no_surat_jalan}
+							/>
+						</div>
+						<div class="mb-4">
+							<label class="block mb-2 text-sm font-bold text-gray-700" for="tanggal">
+								Tanggal
+							</label>
+							<input
+								class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
+								id="tanggal"
+								type="date"
+								bind:value={editingItem.tanggal}
+							/>
+						</div>
+						<div class="mb-4">
+							<label class="block mb-2 text-sm font-bold text-gray-700" for="nama_supplier">
+								Nama Supplier
+							</label>
+							<input
+								class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
+								id="nama_supplier"
+								type="text"
+								bind:value={editingItem.nama_supplier}
+							/>
+						</div>
+						<div class="mb-4">
+							<label class="block mb-2 text-sm font-bold text-gray-700" for="nama_barang">
+								Nama Barang
+							</label>
+							<input
+								class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
+								id="nama_barang"
+								type="text"
+								bind:value={editingItem.nama_barang}
+							/>
+						</div>
+						<div class="mb-4">
+							<label class="block mb-2 text-sm font-bold text-gray-700" for="qty"> Quantity </label>
+							<input
+								class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
+								id="qty"
+								type="number"
+								bind:value={editingItem.qty}
+							/>
+						</div>
+					</form>
+				</div>
+				<div
+					class="flex items-center justify-end p-6 border-t border-solid rounded-b border-blueGray-200"
+				>
+					<button
+						class="px-6 py-2 mb-1 mr-1 text-sm font-bold text-red-500 uppercase transition-all duration-150 ease-linear outline-none background-transparent focus:outline-none"
+						type="button"
+						on:click={closeModal}
+					>
+						Close
+					</button>
+					<button
+						class="px-6 py-3 mb-1 mr-1 text-sm font-bold text-white uppercase transition-all duration-150 ease-linear rounded shadow outline-none bg-emerald-500 active:bg-emerald-600 hover:shadow-lg focus:outline-none"
+						type="button"
+						on:click={saveEdit}
+					>
+						Save Changes
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="fixed inset-0 z-40 bg-black opacity-25"></div>
+{/if}
 
 <style>
 	@import 'tailwindcss/tailwind.css';
