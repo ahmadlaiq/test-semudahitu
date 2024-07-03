@@ -43,6 +43,25 @@
 		currentPage = newPage;
 		fetchItems();
 	}
+
+	async function deleteItem(id) {
+		if (confirm('Are you sure you want to delete this item?')) {
+			try {
+				
+				const response = await fetch(`/api/ins?id=${id}`, {
+					method: 'DELETE'
+				});
+				if (response.ok) {
+					fetchItems();
+				} else {
+					alert('Failed to delete the item. Please try again.');
+				}
+			} catch (error) {
+				console.error('Error deleting item:', error);
+				alert('An error occurred while deleting the item.');
+			}
+		}
+	}
 </script>
 
 <div class="container mx-auto mt-5 mb-5">
@@ -70,7 +89,29 @@
 					<div class="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-4">
 						{#each items as item}
 							<div class="p-4 bg-white rounded-lg shadow-md hover:bg-gray-600 hover:text-white">
-								<h2 class="text-lg text-center capitalize">{item.nama_supplier}</h2>
+								<div class="mb-2">
+									<h2 class="text-lg font-semibold text-center capitalize">
+										{item.no_surat_jalan}
+									</h2>
+								</div>
+								<p class="text-sm text-start">Tanggal: {item.tanggal}</p>
+								<p class="text-sm text-start">Supplier: {item.nama_supplier}</p>
+								<p class="text-sm text-start">Barang: {item.nama_barang}</p>
+								<p class="text-sm text-start">Quantity: {item.qty}</p>
+								<!-- Button Edit and Delete -->
+								<div class="flex justify-center gap-3 mt-4">
+									<button
+										class="px-3 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700"
+									>
+										Edit
+									</button>
+									<button
+										class="px-3 py-2 font-bold text-white bg-red-500 rounded hover:bg-red-700"
+										on:click={() => deleteItem(item._id)}
+									>
+										Delete
+									</button>
+								</div>
 							</div>
 						{/each}
 					</div>
