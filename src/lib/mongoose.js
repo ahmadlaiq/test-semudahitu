@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGO_URI_DEV;
+const MONGODB_URI = process.env.MONGO_URI_PROD;
 
 if (!MONGODB_URI) {
     throw new Error('Something went wrong with the database connection!');
