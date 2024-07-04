@@ -9,14 +9,21 @@
 	let showModal = false;
 	let editingItem = null;
 	let showCreateModal = false;
-    let newItem = {
-        no_surat_jalan: '',
-        tanggal: '',
-        nama_supplier: '',
-        nama_barang: '',
-        qty: ''
-    };
-	
+	let newItem = {
+		no_surat_jalan: '',
+		tanggal: '',
+		nama_supplier: '',
+		nama_barang: '',
+		qty: ''
+	};
+	let validationErrors = {
+		no_surat_jalan: '',
+		tanggal: '',
+		nama_supplier: '',
+		nama_barang: '',
+		qty: ''
+	};
+
 	// Handling fetch get data from API
 	async function fetchItems() {
 		const response = await fetch(
@@ -26,7 +33,7 @@
 		items = data.data;
 		totalPages = data.pagination.totalPages;
 	}
-	
+
 	// Handling search action
 	function handleSearch() {
 		currentPage = 1;
@@ -49,12 +56,14 @@
 	onMount(() => {
 		fetchItems();
 	});
+
 	// Handling pagination
 	function goToPage(newPage) {
 		if (newPage < 1 || newPage > totalPages) return; // Handle invalid page numbers
 		currentPage = newPage;
 		fetchItems();
 	}
+
 	// Handling delete item
 	async function deleteItem(id) {
 		if (confirm('Are you sure you want to delete this item?')) {
@@ -73,13 +82,20 @@
 			}
 		}
 	}
-	
+
 	// Handling open edit modal
 	function openEditModal(item) {
 		editingItem = { ...item };
 		showModal = true;
+		validationErrors = {
+			no_surat_jalan: '',
+			tanggal: '',
+			nama_supplier: '',
+			nama_barang: '',
+			qty: ''
+		};
 	}
-	
+
 	// Handling close modal
 	function closeModal() {
 		showModal = false;
@@ -92,13 +108,16 @@
 			const response = await fetch(`/api/ins?id=${editingItem._id}`, {
 				method: 'PUT',
 				headers: {
-					'Content-Type': 'application/json',
+					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify(editingItem)
 			});
+			const data = await response.json();
 			if (response.ok) {
 				fetchItems();
 				closeModal();
+			} else if (data.status === 'error') {
+				handleValidationErrors(data.errors);
 			} else {
 				alert('Failed to update the item. Please try again.');
 			}
@@ -109,40 +128,63 @@
 	}
 
 	function openCreateModal() {
-        newItem = {
-            no_surat_jalan: '',
-            tanggal: '',
-            nama_supplier: '',
-            nama_barang: '',
-            qty: ''
-        };
-        showCreateModal = true;
-    }
+		newItem = {
+			no_surat_jalan: '',
+			tanggal: '',
+			nama_supplier: '',
+			nama_barang: '',
+			qty: ''
+		};
+		showCreateModal = true;
+		validationErrors = {
+			no_surat_jalan: '',
+			tanggal: '',
+			nama_supplier: '',
+			nama_barang: '',
+			qty: ''
+		};
+	}
 
-    function closeCreateModal() {
-        showCreateModal = false;
-    }
+	function closeCreateModal() {
+		showCreateModal = false;
+	}
 
-    async function createItem() {
-        try {
-            const response = await fetch('/api/ins', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(newItem)
-            });
-            if (response.ok) {
-                fetchItems();
-                closeCreateModal();
-            } else {
-                alert('Failed to create the item. Please try again.');
-            }
-        } catch (error) {
-            console.error('Error creating item:', error);
-            alert('An error occurred while creating the item.');
-        }
-    }
+	async function createItem() {
+		try {
+			const response = await fetch('/api/ins', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(newItem)
+			});
+			const data = await response.json();
+			if (response.ok) {
+				fetchItems();
+				closeCreateModal();
+			} else if (data.status === 'error') {
+				handleValidationErrors(data.errors);
+			} else {
+				alert('Failed to create the item. Please try again.');
+			}
+		} catch (error) {
+			console.error('Error creating item:', error);
+			alert('An error occurred while creating the item.');
+		}
+	}
+
+	function handleValidationErrors(errors) {
+		validationErrors = {
+			no_surat_jalan: '',
+			tanggal: '',
+			nama_supplier: '',
+			nama_barang: '',
+			qty: ''
+		};
+		errors.forEach((error) => {
+			validationErrors[error.path.join('.')] = error.message;
+		});
+	}
 </script>
 
 <div class="container mx-auto mt-5 mb-5">
@@ -151,7 +193,10 @@
 			<div class="bg-white rounded shadow-md">
 				<div class="flex items-center justify-between p-4 border-b">
 					<span class="font-bold">Barang Masuk</span>
-					<button class="px-4 py-2 font-bold text-white bg-green-500 rounded hover:bg-green-700" on:click={openCreateModal}>
+					<button
+						class="px-4 py-2 font-bold text-white bg-green-500 rounded hover:bg-green-700"
+						on:click={openCreateModal}
+					>
 						Add Data
 					</button>
 				</div>
@@ -222,54 +267,71 @@
 
 <!-- Create Modal -->
 {#if showCreateModal}
-<div class="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-black bg-opacity-50">
-    <div class="relative flex flex-col w-full max-w-md p-8 m-auto bg-white rounded-lg">
-        <h2 class="mb-4 text-xl font-bold">Create New Item</h2>
-        <input
-            type="text"
-            class="w-full px-3 py-2 mb-3 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-            placeholder="No. Surat Jalan"
-            bind:value={newItem.no_surat_jalan}
-        />
-        <input
-            type="date"
-            class="w-full px-3 py-2 mb-3 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-            bind:value={newItem.tanggal}
-        />
-        <input
-            type="text"
-            class="w-full px-3 py-2 mb-3 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-            placeholder="Nama Supplier"
-            bind:value={newItem.nama_supplier}
-        />
-        <input
-            type="text"
-            class="w-full px-3 py-2 mb-3 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-            placeholder="Nama Barang"
-            bind:value={newItem.nama_barang}
-        />
-        <input
-            type="number"
-            class="w-full px-3 py-2 mb-3 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
-            placeholder="Quantity"
-            bind:value={newItem.qty}
-        />
-        <div class="flex justify-end">
-            <button
-                class="px-4 py-2 mr-2 font-bold text-white bg-green-500 rounded hover:bg-green-700"
-                on:click={createItem}
-            >
-                Save
-            </button>
-            <button
-                class="px-4 py-2 font-bold text-white bg-gray-500 rounded hover:bg-gray-700"
-                on:click={closeCreateModal}
-            >
-                Cancel
-            </button>
-        </div>
-    </div>
-</div>
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-black bg-opacity-50"
+	>
+		<div class="relative flex flex-col w-full max-w-lg p-8 m-auto bg-white rounded-lg">
+			<h2 class="mb-4 text-xl font-bold">Create New Item</h2>
+			<input
+				type="text"
+				class="w-full px-3 py-2 mb-1 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
+				placeholder="No. Surat Jalan"
+				bind:value={newItem.no_surat_jalan}
+			/>
+			{#if validationErrors.no_surat_jalan}
+				<span class="text-red-500">{validationErrors.no_surat_jalan}</span>
+			{/if}
+			<input
+				type="date"
+				class="w-full px-3 py-2 mt-3 mb-1 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
+				bind:value={newItem.tanggal}
+			/>
+			{#if validationErrors.tanggal}
+				<span class="text-red-500">{validationErrors.tanggal}</span>
+			{/if}
+			<input
+				type="text"
+				class="w-full px-3 py-2 mt-3 mb-1 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
+				placeholder="Nama Supplier"
+				bind:value={newItem.nama_supplier}
+			/>
+			{#if validationErrors.nama_supplier}
+				<span class="text-red-500">{validationErrors.nama_supplier}</span>
+			{/if}
+			<input
+				type="text"
+				class="w-full px-3 py-2 mt-3 mb-1 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
+				placeholder="Nama Barang"
+				bind:value={newItem.nama_barang}
+			/>
+			{#if validationErrors.nama_barang}
+				<span class="text-red-500">{validationErrors.nama_barang}</span>
+			{/if}
+			<input
+				type="number"
+				class="w-full px-3 py-2 mt-3 mb-1 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
+				placeholder="Quantity"
+				bind:value={newItem.qty}
+			/>
+			{#if validationErrors.qty}
+				<span class="text-red-500">{validationErrors.qty}</span>
+			{/if}
+			<div class="flex justify-end mt-3">
+				<button
+					class="px-4 py-2 mr-2 font-bold text-white bg-green-500 rounded hover:bg-green-700"
+					on:click={createItem}
+				>
+					Save
+				</button>
+				<button
+					class="px-4 py-2 font-bold text-white bg-gray-500 rounded hover:bg-gray-700"
+					on:click={closeCreateModal}
+				>
+					Cancel
+				</button>
+			</div>
+		</div>
+	</div>
 {/if}
 
 <!-- Edit Modal -->
@@ -287,7 +349,8 @@
 					<h3 class="text-3xl font-semibold">Edit Barang</h3>
 					<button
 						class="float-right p-1 ml-auto text-3xl font-semibold leading-none text-black bg-transparent border-0 outline-none opacity-5 focus:outline-none"
-						on:click={closeModal}>
+						on:click={closeModal}
+					>
 						<span
 							class="block w-6 h-6 text-2xl text-black bg-transparent outline-none opacity-5 focus:outline-none"
 						>
@@ -297,8 +360,8 @@
 				</div>
 				<div class="relative flex-auto p-6">
 					<form>
-						<div class="mb-4">
-							<label class="block mb-2 text-sm font-bold text-gray-700" for="no_surat_jalan">
+						<div class="mb-1">
+							<label class="block text-sm font-bold text-gray-700 mb-" for="no_surat_jalan">
 								No Surat Jalan
 							</label>
 							<input
@@ -307,8 +370,11 @@
 								type="text"
 								bind:value={editingItem.no_surat_jalan}
 							/>
+							{#if validationErrors.no_surat_jalan}
+								<span class="text-red-500">{validationErrors.no_surat_jalan}</span>
+							{/if}
 						</div>
-						<div class="mb-4">
+						<div class="mt-3 mb-1">
 							<label class="block mb-2 text-sm font-bold text-gray-700" for="tanggal">
 								Tanggal
 							</label>
@@ -318,8 +384,11 @@
 								type="date"
 								bind:value={editingItem.tanggal}
 							/>
+							{#if validationErrors.no_surat_jalan}
+								<span class="text-red-500">{validationErrors.no_surat_jalan}</span>
+							{/if}
 						</div>
-						<div class="mb-4">
+						<div class="mt-3 mb-1">
 							<label class="block mb-2 text-sm font-bold text-gray-700" for="nama_supplier">
 								Nama Supplier
 							</label>
@@ -329,8 +398,11 @@
 								type="text"
 								bind:value={editingItem.nama_supplier}
 							/>
+							{#if validationErrors.nama_supplier}
+								<span class="text-red-500">{validationErrors.nama_supplier}</span>
+							{/if}
 						</div>
-						<div class="mb-4">
+						<div class="mt-3 mb-1">
 							<label class="block mb-2 text-sm font-bold text-gray-700" for="nama_barang">
 								Nama Barang
 							</label>
@@ -340,8 +412,11 @@
 								type="text"
 								bind:value={editingItem.nama_barang}
 							/>
+							{#if validationErrors.nama_barang}
+								<span class="text-red-500">{validationErrors.nama_barang}</span>
+							{/if}
 						</div>
-						<div class="mb-4">
+						<div class="mt-3 mb-1">
 							<label class="block mb-2 text-sm font-bold text-gray-700" for="qty"> Quantity </label>
 							<input
 								class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline"
@@ -349,6 +424,9 @@
 								type="number"
 								bind:value={editingItem.qty}
 							/>
+							{#if validationErrors.qty}
+								<span class="text-red-500">{validationErrors.qty}</span>
+							{/if}
 						</div>
 					</form>
 				</div>
