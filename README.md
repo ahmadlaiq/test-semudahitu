@@ -31,4 +31,4 @@ npm run dev
 6. Buat Pull Request
 
 ## Link Demo Video
-[Demo Video](https://www.youtube.com/watch?v=J1jYl1Hm6qY)
+[Demo Video](https://youtu.be/-FGBzOEZ7hc)
