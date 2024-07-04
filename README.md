@@ -1,7 +1,7 @@
 # Technical Test Intermediate Full Stack Developer
 
 ## Deskripsi
-Technical Test ini adalah test untuk menilai kemampuan kalian dalam membuat aplikasi web sederhana menggunakan framework SvelteKit. Aplikasi yang akan kalian buat adalah aplikasi CRUD sederhana untuk mengelola data sirkulasi barang di gudang.
+Technical Test ini adalah test untuk membuat aplikasi web sederhana menggunakan framework SvelteKit. Aplikasi yang akan  dibuat adalah aplikasi CRUD sederhana untuk mengelola data sirkulasi barang di gudang.
 
 ## Cara Menjalankan
 1. Clone repository ini
